@@ -1,5 +1,6 @@
 from fastapi import FastAPI, status, Request
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
 
@@ -7,6 +8,18 @@ from app.db import game_collection, user_collection
 from app.request.User import NewUser
 
 app = FastAPI()
+async def custom_404_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return JSONResponse(
+            status_code=404,
+            content={"message": "The requested resource was not found"},
+        )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.detail},
+    )
+
+app.add_exception_handler(StarletteHTTPException, custom_404_handler)
 
 @app.get("/user/{id}")
 def get_user_by_id(id: str):
@@ -114,3 +127,15 @@ async def save_game(request: Request):
     del new_record['_id']
     
     return JSONResponse(content=new_record, status_code=status.HTTP_201_CREATED)
+
+# Custom exception handler middleware
+@app.middleware("http")
+async def custom_exception_handler(request: Request, call_next):
+    try:
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"message": "An unexpected error occurred.", "details": str(e)},
+        )
