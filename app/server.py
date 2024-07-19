@@ -21,6 +21,16 @@ async def custom_404_handler(request: Request, exc: StarletteHTTPException):
 
 app.add_exception_handler(StarletteHTTPException, custom_404_handler)
 
+@app.get("/user/")
+def get_all_users():
+    users = list(user_collection.find({}))
+    for user in users:
+        del user["_id"]
+    return JSONResponse(
+        content=users,
+        status_code=status.HTTP_200_OK
+    )
+
 @app.get("/user/{id}")
 def get_user_by_id(id: str):
     user = user_collection.find_one({ "telegram_id": id })
