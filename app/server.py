@@ -21,6 +21,13 @@ async def custom_404_handler(request: Request, exc: StarletteHTTPException):
 
 app.add_exception_handler(StarletteHTTPException, custom_404_handler)
 
+@app.get('/')
+async def index():
+    return JSONResponse(
+        status_code=200,
+        content={"message": "Server is online"},
+    )
+
 @app.get("/user/")
 def get_all_users():
     users = list(user_collection.find({}))
